@@ -1,0 +1,10 @@
+apiVersion: v1
+description: fluentd with elasticsearch & remote syslog customized from lab digital's one
+name: fluentd-es-pt
+version: 0.1.0
+sources:
+  - https://github.com/timothyclarke/docker-fluentd-es-pt
+maintainers:
+  - name: timothyclarke
+    email: ghtimothy@timothy.fromnz.net
+

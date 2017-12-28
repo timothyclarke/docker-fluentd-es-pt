@@ -1,0 +1,131 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "fullname" . }}
+  namespace: kube-system
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+data:
+  fluent.conf: |-
+    @include kubernetes.conf
+    @include filters.conf
+    @include destinations.conf
+
+  destinations.conf: |-
+  {{ if .Values.ingress.enabled }}
+    ######### INGRESS
+    <match kubernetes.var.log.containers.ingress-nginx**>
+      @type copy
+    {{- if .Values.ingress.papertrail.enabled }}
+      ## Start to papertrailapp.com
+      <store>
+        @type kubernetes_remote_syslog
+        host {{ .Values.ingress.papertrail.host }}
+        port {{ .Values.ingress.papertrail.port }}
+        packet_size 999999
+        protocol tcp
+        tag kubernetes-docker
+        output_include_tag false
+        output_include_time false
+      </store>
+      ## End to papertrailapp.com
+    {{- end -}}
+    {{- if .Values.ingress.logzio.enabled }}
+      ## Start to logz.io
+      <store>
+        @type logzio_buffered
+        endpoint_url https://listener.logz.io:8071?token={{- .Values.ingress.logzio.token -}}type={{- .Values.ingress.logzio.tag }}
+        output_include_time true
+        output_include_tags true
+        buffer_type    file
+        buffer_path    /tmp/logzio_buffered.ingress
+        flush_interval 10s
+        buffer_chunk_limit 1m
+      </store>
+      ## End to logz.io
+    {{- end }}
+    </match>
+  {{ end }}
+  {{ if .Values.wordpress.enabled }}
+    ######### WordPress
+    <match kubernetes.var.log.containers.*wordpress**>
+      @type copy
+    {{- if .Values.wordpress.papertrail.enabled }}
+      ## Start to papertrailapp.com
+      <store>
+        @type kubernetes_remote_syslog
+        host {{ .Values.wordpress.papertrail.host }}
+        port {{ .Values.wordpress.papertrail.port }}
+        packet_size 999999
+        protocol tcp
+        tag kubernetes-docker
+        output_include_tag false
+        output_include_time false
+      </store>
+      ## End to papertrailapp.com
+    {{- end -}}
+    {{- if .Values.wordpress.logzio.enabled }}
+      ## Start to logz.io
+      <store>
+        @type logzio_buffered
+        endpoint_url https://listener.logz.io:8071?token={{- .Values.wordpress.logzio.token -}}type={{- .Values.wordpress.logzio.tag }}
+        output_include_time true
+        output_include_tags true
+        buffer_type    file
+        buffer_path    /tmp/logzio_buffered.wordpress
+        flush_interval 10s
+        buffer_chunk_limit 1m
+      </store>
+      ## End to logz.io
+    {{- end }}
+    </match>
+  {{ end }}
+  {{ if .Values.catchall.enabled }}
+    ######## Match All for everything else
+    ## Output to multiple destinations
+    <match **>
+      @type copy
+      ## Add more 'Store' contexts for additional outputs
+    {{- if .Values.catchall.papertrail.enabled }}
+      ## Start to papertrailapp.com
+      <store>
+        @type kubernetes_remote_syslog
+        host {{ .Values.catchall.papertrail.host }}
+        port {{ .Values.catchall.papertrail.port }}
+        packet_size 999999
+        protocol tcp
+        tag kubernetes-docker
+        output_include_tag false
+        output_include_time false
+      </store>
+      ## End to papertrailapp.com
+    {{- end -}}
+    {{- if .Values.catchall.logzio.enabled }}
+      ## Start to logz.io
+      <store>
+        @type logzio_buffered
+        endpoint_url https://listener.logz.io:8071?token={{- .Values.catchall.logzio.token -}}type={{- .Values.catchall.logzio.tag }}
+        output_include_time true
+        output_include_tags true
+        buffer_type    file
+        buffer_path    /tmp/logzio_buffered.catchall
+        flush_interval 10s
+        buffer_chunk_limit 1m   # Logz.io has bulk limit of 10M. We recommend set this to 1M, to avoid oversized bulks
+      </store>
+      ## End to logz.io
+    {{- end }}
+    </match>
+  {{ end }}
+
+  filters.conf: |-
+    ## nginx ingress logs
+    <filter kubernetes.var.log.containers.ingress-controller-nginx-ingress-controller-**.log>
+      @type parser
+      format /^(?<host>[^ ]*) (?<domain>[^ ]*) \[(?<x_forwarded_for>[^\]]*)\] (?<server_port>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?:(?<method>\S+[^\"])(?: +(?<path>[^\"]*?)(?: +(?<protocol>\S*))?)?)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")? (?<request_length>[^ ]*) (?<request_time>[^ ]*) (?:\[(?<proxy_upstream_name>[^\]]*)\] )?(?<upstream_addr>[^ ]*) (?<upstream_response_length>[^ ]*) (?<upstream_response_time>[^ ]*) (?<upstream_status>[^ ]*)$\n/
+      time_format %d/%b/%Y:%H:%M:%S %z
+      key_name log
+      types server_port:integer,code:integer,size:integer,request_length:integer,request_time:float,upstream_response_length:integer,upstream_response_time:float,upstream_status:integer
+      reserve_data yes
+      add stdout
+    </filter>

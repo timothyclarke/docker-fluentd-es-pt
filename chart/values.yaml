@@ -1,0 +1,39 @@
+#values.yaml
+#namespace: kube-system
+image:
+  repository: timothyclarke/docker-fluentd-es-pt
+  tag:        0.0.1
+  pullPolicy: IfNotPresent
+
+ingress:
+  enabled:    false
+  papertrail:
+    enabled:  true
+    host:     logs.papertrailapp.com
+    port:     514
+  logzio:
+    enabled:  true
+    token:    ABC123
+    tag:      DEV_LOGS-INGRESS
+
+wordpress:
+  enabled:    false
+  papertrail:
+    enabled:  true
+    host:     logs.papertrailapp.com
+    port:     514
+  logzio:
+    enabled:  true
+    token:    ABC123
+    tag:      DEV_LOGS-WORDPRESS
+
+catchall:
+  enabled:    false
+  papertrail:
+    enabled:  true
+    host:     logs.papertrailapp.com
+    port:     514
+  logzio:
+    enabled:  true
+    token:    ABC123
+    tag:      DEV_LOGS-WORDPRESS
