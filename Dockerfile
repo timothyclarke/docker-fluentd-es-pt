@@ -1,8 +1,9 @@
 FROM fluent/fluentd-kubernetes-daemonset:elasticsearch
 MAINTAINER Timothy Clarke <ghtimothy@timothy.fromnz.net>
 
-WORKDIR /home/fluent
-COPY entrypoint.sh /fluentd/entrypoint.sh
+USER root
+WORKDIR /fluentd
+COPY --chown=0:0 entrypoint.sh /fluentd/entrypoint.sh
 
 RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
@@ -16,3 +17,5 @@ RUN set -ex \
     && gem sources --clear-all \
     && chmod +x /fluentd/entrypoint.sh \
     && rm -rf /tmp/* /var/tmp/* /usr/lib/ruby/gems/*/cache/*.gem
+
+ENTRYPOINT ["/fluentd/entrypoint.sh"]
