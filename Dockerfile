@@ -12,7 +12,7 @@ RUN set -ex \
         libffi-dev \
     && gem uninstall remote_syslog_logger \
     && gem install fluent-plugin-concat fluent-plugin-kubernetes_remote_syslog fluent-plugin-logzio remote_syslog_sender fluent-plugin-gelf-hs fluent-plugin-record-modifier \
-    && sed 's#path /var/log/containers/\*.log#path /var/log/containers/\*.log\n  exclude_path ["/var/log/containers/fluentd\*"]#g' -i /fluentd/etc/kubernetes.conf \
+    && sed 's#path /var/log/containers/\*.log#path /var/log/containers/\*.log\n  exclude_path ["/var/log/containers/\*luentd\*"]#g' -i /fluentd/etc/kubernetes.conf \
     && apk del .build-deps \
     && gem sources --clear-all \
     && chmod +x /fluentd/entrypoint.sh \
